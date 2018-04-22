@@ -21,7 +21,13 @@ message Vacation {
 }
 
 
-message GetAllRequest {}
+message GetAllRequest {
+  
+}
+
+message GetAllRequestDefault {
+    bool istrue = 1;
+}
 
 message GetByBadgeNumberRequest {
     int32 badgeNumber = 1;
@@ -33,17 +39,23 @@ message EmployeeResponse {
     Employee employee = 1;
 }
 
+message EmployeeResponseRepeated {
+    bool istrue = 1;
+    repeated Employee employee = 2;
+}
+
 message AddPhotoRequest {
     bytes data = 1;
 }
 
 message AddPhotoResponse {
-    bytes isOk = 1;
+    bool isOk = 1;
 }
 
 service EmployeeService {
     rpc GetByBadgeNumber (GetByBadgeNumberRequest) returns (EmployeeResponse);
     rpc GetAll(GetAllRequest) returns (stream EmployeeResponse);
+    rpc GetAllDefault(GetAllRequestDefault) returns (EmployeeResponseRepeated);
     rpc Save (EmployeeRequest) returns (EmployeeResponse);
     rpc SaveAll (stream EmployeeRequest) returns (stream EmployeeResponse);
     rpc AddPhoto (stream AddPhotoRequest) returns (AddPhotoResponse);

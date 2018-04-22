@@ -41,6 +41,8 @@ func main() {
 		AddPhoto(client)
 	case 5:
 		SaveAll(client)
+	case 6:
+		GetAllDefault(client)
 	}
 }
 
@@ -157,4 +159,13 @@ func SendMetadata(client pb.EmployeeServiceClient) {
 	ctx := context.Background()
 	ctx = metadata.NewOutgoingContext(ctx, md)
 	client.GetByBadgeNumber(ctx, &pb.GetByBadgeNumberRequest{BadgeNumber: 2080})
+}
+
+func GetAllDefault(client pb.EmployeeServiceClient) {
+	ctx := context.Background()
+	res, err := client.GetAllDefault(ctx, &pb.GetAllRequestDefault{Istrue: true})
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(res.Istrue, res.Employee)
 }

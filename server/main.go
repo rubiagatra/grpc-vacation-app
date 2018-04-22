@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net"
 
@@ -45,21 +46,63 @@ func (s *employeeService) GetByBadgeNumber(ctx context.Context,
 	return nil, errors.New("Employee not found")
 }
 
-func (s *employeeService) GetAll(req *pb.GetAllRequest,
-	stream pb.EmployeeService_GetAllServer) error {
+func (s *employeeService) GetAll(req *pb.GetAllRequest, stream pb.EmployeeService_GetAllServer) error {
+	for _, e := range employees {
+		stream.Send(&pb.EmployeeResponse{Employee: &e})
+	}
 	return nil
 }
-
-func (s *employeeService) AddPhoto(stream pb.EmployeeService_AddPhotoServer) error {
-	return nil
-}
-
 func (s *employeeService) Save(ctx context.Context, req *pb.EmployeeRequest) (*pb.EmployeeResponse, error) {
-	return nil, nil
+	employees = append(employees, *req.Employee)
+	return &pb.EmployeeResponse{Employee: req.Employee}, nil
+}
+func (s *employeeService) SaveAll(stream pb.EmployeeService_SaveAllServer) error {
+	for {
+		emp, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+		employees = append(employees, *emp.Employee)
+		stream.Send(&pb.EmployeeResponse{Employee: emp.Employee})
+	}
+	for _, e := range employees {
+		fmt.Println(e)
+	}
+	return nil
+}
+func (s *employeeService) AddPhoto(stream pb.EmployeeService_AddPhotoServer) error {
+	imgData := []byte{}
+	for {
+		data, err := stream.Recv()
+		if err == io.EOF {
+			fmt.Printf("File received with length: %v\n", len(imgData))
+			return stream.SendAndClose(&pb.AddPhotoResponse{IsOk: true})
+		}
+		if err != nil {
+			return err
+		}
+		imgData = append(imgData, data.Data...)
+	}
 }
 
-func (s *employeeService) SaveAll(stream pb.EmployeeService_SaveAllServer) error {
-	return nil
+func (s *employeeService) GetAllDefault(ctx context.Context, req *pb.GetAllRequestDefault) (*pb.EmployeeResponseRepeated, error) {
+	var employeeResp []*pb.Employee
+
+	for _, e := range employees {
+		employeeResp = append(employeeResp, &pb.Employee{
+			Id:                  e.Id,
+			BadgeNumber:         e.BadgeNumber,
+			FirstName:           e.FirstName,
+			LastName:            e.LastName,
+			VacationAccrualRate: e.VacationAccrualRate,
+			VacationAccrued:     e.VacationAccrued,
+		})
+	}
+	return &pb.EmployeeResponseRepeated{Istrue: req.Istrue, Employee: employeeResp}, nil
+
 }
 
 var employees = []pb.Employee{
